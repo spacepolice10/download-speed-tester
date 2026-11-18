@@ -1,0 +1,22 @@
+{
+  "name": "download-speed-tester",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26 <27"
+  },
+  "scripts": {
+    "start": "node index.ts",
+    "test": "node --test tests/*.test.ts",
+    "test:watch": "node --test --watch tests/*.test.ts",
+    "test:download": "node index.ts \"https://images.unsplash.com/photo-1790619710810-7e9e931f26d2?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D\"",
+    "check": "npm run typecheck && npm test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.9.3"
+  },
+  "description": "Sequential HTTP download speed tester with live progress and per-request measurements."
+}
