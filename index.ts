@@ -140,17 +140,22 @@ export function throttle<Args extends unknown[]>(callback: (...args: Args) => vo
 }
 
 function summarize(records: RequestData[]) {
+  const requests = records.length;
   const successful = records.filter((result) => !result.isDownloading && result.error === undefined).length;
+  const failed = requests - successful;
   const sizeBytes = records.reduce((total, result) => total + result.sizeBytes, 0);
   const durationMs = records.reduce((total, result) => total + result.durationMs, 0);
+  const averageDurationMs = requests > 0 ? durationMs / requests : 0;
+  const averageSpeedBytesPerSecond = calculateSpeed(sizeBytes, durationMs);
 
   return {
-    requests: records.length,
+    requests,
     successful,
-    failed: records.length - successful,
+    failed,
     sizeBytes,
     durationMs,
-    averageSpeedBytesPerSecond: durationMs > 0 ? sizeBytes * 1000 / durationMs : 0,
+    averageDurationMs,
+    averageSpeedBytesPerSecond,
   };
 }
 
@@ -225,6 +230,7 @@ Options:
 
 Measurements:
   Average and median speeds are calculated separately for each request.
+  Summary average duration = total request duration / number of requests (including failures).
   Summary speed = total downloaded bytes / total request duration (including failures).
   Request timeout: ${REQUEST_TIMEOUT_MS / 1000} seconds (fixed in REQUEST_TIMEOUT_MS).
 

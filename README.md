@@ -21,8 +21,8 @@ git clone https://github.com/spacepolice10/download-speed-tester.git
 cd download-speed-tester
 npm ci
 
-# Три последовательные загрузки тестового MP4
-npm start -- "https://samplelib.com/mp4/sample-30s.mp4" 3
+# Десять последовательных загрузок тестового MP4
+npm start -- "https://samplelib.com/mp4/sample-30s.mp4"
 ```
 
 Если используете mise, версия Node.js уже указана в `mise.toml`:
@@ -31,7 +31,7 @@ npm start -- "https://samplelib.com/mp4/sample-30s.mp4" 3
 mise trust
 mise install
 mise exec -- npm ci
-mise exec -- npm start -- "https://samplelib.com/mp4/sample-30s.mp4" 3
+mise exec -- npm start -- "https://samplelib.com/mp4/sample-30s.mp4"
 ```
 
 Синтаксис команды:
@@ -87,8 +87,14 @@ Downloading 1/3… 850.25 KiB/s
 полностью: в этом случае также смотрите на `error`.
 
 В конце выводится `Summary`: число запросов, успешных и неудачных попыток,
-общий объём данных, сумма длительностей запросов и общая средняя скорость.
-В суммарные байты и время входят также неудачные попытки.
+общий объём данных, сумма длительностей запросов, среднее время запроса
+и общая средняя скорость. Поле `averageDurationMs` — сумма длительностей,
+разделённая на количество запросов, в миллисекундах.
+В суммарные байты, время и расчёт среднего времени входят также неудачные попытки.
+
+Скорость в строке прогресса указана в KiB/s: 1 KiB = 1024 байта.
+Поля `speedBytesPerSecond`, `medianSpeedBytesPerSecond` и
+`averageSpeedBytesPerSecond` в результатах и сводке указаны в байтах/с.
 
 При перенаправлении вывода в файл или pipe промежуточные обновления строки
 отключаются: остаются уведомление о начале, результаты запросов и сводка.

@@ -165,6 +165,7 @@ test('calculates average and median per request, including time after the last c
   assert.ok(results.every((result) => !('speedSamplesBytesPerSecond' in result)));
   assert.deepEqual(h.summary(), {
     requests: 2, successful: 2, failed: 0, sizeBytes: 450, durationMs: 400,
+    averageDurationMs: 200,
     averageSpeedBytesPerSecond: 1125,
   });
 });
@@ -182,6 +183,24 @@ test('uses an odd sample median and ignores zero-duration or empty speed samples
   assert.equal(results[0]!.sizeBytes, 610);
   assert.equal(results[0]!.medianSpeedBytesPerSecond, 2000);
   assert.equal(results[0]!.speedBytesPerSecond, 610_000 / 300);
+});
+
+test('summary averages durations across successful, HTTP-failed, and network-failed requests', async (t) => {
+  const h = setup(t);
+  h.respondWith(async () => {
+    const request = h.calls.length;
+    if (request === 3) { h.advance(200); throw new Error('connection failed'); }
+    return download(h, [{ bytes: 100, afterMs: request === 1 ? 100 : 300 }], {
+      status: request === 1 ? 200 : 500,
+    });
+  });
+  const results = await main([ADDRESS, '3']);
+  assert.deepEqual(results.map((result) => result.durationMs), [100, 300, 200]);
+  assert.deepEqual(h.summary(), {
+    requests: 3, successful: 1, failed: 2, sizeBytes: 200, durationMs: 600,
+    averageDurationMs: 200,
+    averageSpeedBytesPerSecond: 200_000 / 600,
+  });
 });
 
 test('handles a zero-duration download without Infinity or NaN', async (t) => {
@@ -242,6 +261,7 @@ for (const status of [404, 429, 500]) {
     assert.equal(h.errors.length, 1);
     assert.deepEqual(h.summary(), {
       requests: 2, successful: 1, failed: 1, sizeBytes: 200, durationMs: 200,
+      averageDurationMs: 100,
       averageSpeedBytesPerSecond: 1000,
     });
   });
@@ -374,8 +394,8 @@ test('separate runs retain independent results, summaries, and exit codes', asyn
   assert.ok(second.every((result) => result.error === undefined));
   const summaries = h.logs.filter(([label]) => label === 'Summary:').map(([, summary]) => summary);
   assert.deepEqual(summaries, [
-    { requests: 1, successful: 0, failed: 1, sizeBytes: 0, durationMs: 0, averageSpeedBytesPerSecond: 0 },
-    { requests: 2, successful: 2, failed: 0, sizeBytes: 100, durationMs: 200, averageSpeedBytesPerSecond: 500 },
+    { requests: 1, successful: 0, failed: 1, sizeBytes: 0, durationMs: 0, averageDurationMs: 0, averageSpeedBytesPerSecond: 0 },
+    { requests: 2, successful: 2, failed: 0, sizeBytes: 100, durationMs: 200, averageDurationMs: 100, averageSpeedBytesPerSecond: 500 },
   ]);
 
   const invalid = await main(['not-a-url']);
@@ -429,6 +449,7 @@ test('throttles terminal refreshes per request while retaining every chunk in me
   assert.equal(h.logs.filter(([value]) => typeof value === 'object').length, 2);
   assert.deepEqual(h.summary(), {
     requests: 2, successful: 2, failed: 0, sizeBytes: 480, durationMs: 480,
+    averageDurationMs: 240,
     averageSpeedBytesPerSecond: 1000,
   });
 });
@@ -472,6 +493,7 @@ test('clears live progress before printing a terminal error and summary', async 
   assert.equal(h.terminalEvents.filter((event) => event === 'clear').length, 3);
   assert.deepEqual(h.summary(), {
     requests: 1, successful: 0, failed: 1, sizeBytes: 0, durationMs: 0,
+    averageDurationMs: 0,
     averageSpeedBytesPerSecond: 0,
   });
 });
